@@ -1,9 +1,10 @@
 use bevy::{
     input::InputSystem,
     prelude::{
-        App, Camera, Component, CoreSet, GlobalTransform, IntoSystemConfig, IntoSystemConfigs,
-        MouseButton, Plugin, Query, Res, Resource, Vec2,
+        App, Camera, Component, GlobalTransform, IntoSystemConfigs, MouseButton, Plugin, PreUpdate,
+        Query, Res, Resource, Vec2,
     },
+    reflect::TypePath,
     window::Window,
 };
 use leafwing_input_manager::{
@@ -23,24 +24,14 @@ pub struct InputPlugin;
 impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            (
-                update_cursor_state_from_window
-                    .run_if(run_if_enabled::<FrogActions>)
-                    .in_base_set(CoreSet::PreUpdate)
-                    .in_set(InputManagerSystem::ManualControl)
-                    .before(InputManagerSystem::ReleaseOnDisable)
-                    .after(InputManagerSystem::Tick)
-                    .after(InputManagerSystem::Update)
-                    .after(InputSystem),
-                update_aiming
-                    .run_if(run_if_enabled::<FrogActions>)
-                    .in_base_set(CoreSet::PreUpdate)
-                    .in_set(InputManagerSystem::ManualControl)
-                    .before(InputManagerSystem::ReleaseOnDisable)
-                    .after(InputManagerSystem::Tick)
-                    .after(InputManagerSystem::Update)
-                    .after(InputSystem),
-            )
+            PreUpdate,
+            (update_cursor_state_from_window, update_aiming)
+                .run_if(run_if_enabled::<FrogActions>)
+                .in_set(InputManagerSystem::ManualControl)
+                .before(InputManagerSystem::ReleaseOnDisable)
+                .after(InputManagerSystem::Tick)
+                .after(InputManagerSystem::Update)
+                .after(InputSystem)
                 .chain(),
         )
         .insert_resource(AimCancelTime(DEFAULT_AIM_CANCEL_TIME))
@@ -73,7 +64,7 @@ impl FrogAimState {
     }
 }
 
-#[derive(Actionlike, PartialEq, Eq, Clone, Copy, Hash, Debug)]
+#[derive(Actionlike, TypePath, PartialEq, Eq, Clone, Copy, Hash, Debug)]
 pub enum FrogActions {
     Aim,
     AimPositionWorld,

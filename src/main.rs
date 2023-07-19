@@ -21,13 +21,14 @@ fn main() {
             }),
             ..default()
         }))
-        .add_plugin(InputManagerPlugin::<FrogActions>::default())
-        .add_plugin(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(16.0))
-        .add_plugin(RapierDebugRenderPlugin::default())
-        .add_plugin(InputPlugin)
-        .add_plugin(GameplayPlugin)
-        .add_startup_system(setup_graphics)
-        .add_startup_system(setup_physics)
+        .add_plugins((
+            InputManagerPlugin::<FrogActions>::default(),
+            RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(16.0),
+            RapierDebugRenderPlugin::default(),
+            InputPlugin,
+            GameplayPlugin,
+        ))
+        .add_systems(Startup, (setup_graphics, setup_physics))
         .run();
 }
 
@@ -36,7 +37,11 @@ fn setup_graphics(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
 }
 
-fn setup_physics(mut commands: Commands, asset_server: ResMut<AssetServer>) {
+fn setup_physics(
+    mut commands: Commands,
+    asset_server: ResMut<AssetServer>,
+    mut config: ResMut<RapierConfiguration>,
+) {
     /* Create the room. */
     commands
         .spawn(Collider::cuboid(500.0, 50.0))
@@ -51,6 +56,8 @@ fn setup_physics(mut commands: Commands, asset_server: ResMut<AssetServer>) {
     commands
         .spawn(Collider::cuboid(50.0, 360.0))
         .insert(TransformBundle::from(Transform::from_xyz(-320.0, 0.0, 0.0)));
+
+    config.gravity = Vec2::new(0.0, -500.0);
 
     commands
         .spawn(FrogBundle::new(

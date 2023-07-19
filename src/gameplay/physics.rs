@@ -1,8 +1,8 @@
 use bevy::{
     math::Vec2,
     prelude::{
-        info, Component, Entity, GlobalTransform, IntoSystemConfig, IntoSystemSetConfig, Plugin,
-        Query, Res, SystemSet,
+        Component, Entity, GlobalTransform, IntoSystemSetConfig, Plugin, PostUpdate, Query, Res,
+        SystemSet,
     },
 };
 use bevy_rapier2d::prelude::{Collider, PhysicsSet, QueryFilter, RapierContext};
@@ -14,12 +14,8 @@ struct PostPhysicsSet;
 
 impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_system(
-            update_collision_state
-                .no_default_base_set()
-                .in_set(PostPhysicsSet),
-        )
-        .configure_set(PostPhysicsSet.after(PhysicsSet::Writeback));
+        app.add_systems(PostUpdate, update_collision_state)
+            .configure_set(PostUpdate, PostPhysicsSet.after(PhysicsSet::Writeback));
     }
 }
 

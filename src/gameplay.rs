@@ -1,7 +1,7 @@
 use bevy::{
     prelude::{
         info, Bundle, Camera, Commands, Component, Entity, GlobalTransform, Handle, Image,
-        IntoSystemConfigs, Plugin, Query, Transform, Without,
+        IntoSystemConfigs, Plugin, Query, Transform, Update, Without,
     },
     sprite::SpriteBundle,
 };
@@ -18,8 +18,8 @@ pub struct GameplayPlugin;
 
 impl Plugin for GameplayPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_plugin(PhysicsPlugin)
-            .add_systems((start_aim, update_aim, finish_aim).chain());
+        app.add_plugins(PhysicsPlugin)
+            .add_systems(Update, (start_aim, update_aim, finish_aim).chain());
     }
 }
 
@@ -82,17 +82,19 @@ fn update_aim(mut frogs: Query<(&ActionState<FrogActions>, &mut FrogAimState)>) 
     }
 }
 
+type FinishAimComponents<'a> = (
+    Entity,
+    &'a ActionState<FrogActions>,
+    &'a FrogAimState,
+    &'a JumpStrength,
+    &'a CollisionState,
+    &'a mut Velocity,
+);
+
 fn finish_aim(
     mut commands: Commands,
     camera_query: Query<(&Camera, &GlobalTransform)>,
-    mut frogs: Query<(
-        Entity,
-        &ActionState<FrogActions>,
-        &FrogAimState,
-        &JumpStrength,
-        &CollisionState,
-        &mut Velocity,
-    )>,
+    mut frogs: Query<FinishAimComponents>,
 ) {
     let (camera, camera_transform) = camera_query.single();
     for (entity, action_state, aim_state, jump_strength, collision_state, mut velocity) in
