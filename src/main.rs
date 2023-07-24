@@ -1,11 +1,15 @@
 use bevy::prelude::*;
+use bevy_asset_loader::prelude::*;
+use bevy_asset_loader::standard_dynamic_asset::StandardDynamicAssetCollection;
 use bevy_rapier2d::prelude::*;
 use controls::{FrogActions, InputPlugin};
-use gameplay::{FrogBundle, GameplayPlugin};
+use gameplay::{FrogAssets, FrogBundle, GameplayPlugin};
 use leafwing_input_manager::prelude::InputManagerPlugin;
 
 mod controls;
 mod gameplay;
+
+pub const PIXELS_PER_METER: f32 = 16.0;
 
 fn main() {
     App::new()
@@ -28,18 +32,57 @@ fn main() {
             InputPlugin,
             GameplayPlugin,
         ))
-        .add_systems(Startup, (setup_graphics, setup_physics))
+        .add_state::<GameStates>()
+        .add_loading_state(
+            LoadingState::new(GameStates::LoadLevel).continue_to_state(GameStates::PlayLevel),
+        )
+        .add_collection_to_loading_state::<_, FrogAssets>(GameStates::LoadLevel)
+        .add_systems(Startup, setup_graphics)
+        .add_systems(OnEnter(GameStates::LoadLevel), setup_asset_loading)
+        .add_systems(OnEnter(GameStates::PlayLevel), setup_level)
         .run();
 }
 
 fn setup_graphics(mut commands: Commands) {
     // Add a camera so we can see the debug-render.
     commands.spawn(Camera2dBundle::default());
+    commands.insert_resource(LevelInfo {
+        frog: "basic".into(),
+        level: "blocks".into(),
+    });
 }
 
-fn setup_physics(
+#[derive(Resource)]
+struct LevelInfo {
+    frog: String,
+    level: String,
+}
+
+#[derive(Clone, Eq, PartialEq, Debug, Hash, Default, States)]
+enum GameStates {
+    Menu,
+    #[default]
+    LoadLevel,
+    PlayLevel,
+}
+
+fn setup_asset_loading(
+    mut dynamic_asset_collections: ResMut<DynamicAssetCollections<GameStates>>,
+    level_info: Res<LevelInfo>,
+) {
+    info!(
+        "Loading assets: {}",
+        format!("frogs/{}.assets.ron", level_info.frog)
+    );
+    dynamic_asset_collections.register_file::<StandardDynamicAssetCollection>(
+        GameStates::LoadLevel,
+        &format!("frogs/{}.assets.ron", level_info.frog),
+    );
+}
+
+fn setup_level(
     mut commands: Commands,
-    asset_server: ResMut<AssetServer>,
+    frog_assets: Res<FrogAssets>,
     mut config: ResMut<RapierConfiguration>,
 ) {
     /* Create the room. */
@@ -62,7 +105,7 @@ fn setup_physics(
     commands
         .spawn(FrogBundle::new(
             Transform::from_translation(Vec3::new(0.0, 100.0, 0.0)),
-            asset_server.load("Frog.png"),
+            &frog_assets,
         ))
         .insert(FrogActions::get_default_input_manager_bundle());
 }

@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 bevy = "0.11"
 leafwing-input-manager = "0.10"
+bevy_asset_loader = {version = "0.17.0", features = ["standard_dynamic_assets"]}
 
 [profile.dev.package.bevy_rapier2d]
 opt-level = 3
@@ -16,4 +17,4 @@ opt-level = 3
 bevy_rapier2d = { version = "0.22.0", features = ["serde-serialize", "enhanced-determinism", "wasm-bindgen"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-bevy_rapier2d = { version = "0.22.0", features = ["parallel", "serde-serialize", "enhanced-determinism", "wasm-bindgen"] }
+bevy_rapier2d = { version = "0.22.0", features = ["parallel", "serde-serialize", "enhanced-determinism"] }

@@ -1,14 +1,18 @@
 use bevy::{
     prelude::{
         info, Bundle, Camera, Commands, Component, Entity, GlobalTransform, Handle, Image,
-        IntoSystemConfigs, Plugin, Query, Transform, Update, Without,
+        IntoSystemConfigs, Plugin, Query, Resource, Transform, Update, Without,
     },
     sprite::SpriteBundle,
 };
+use bevy_asset_loader::prelude::AssetCollection;
 use bevy_rapier2d::prelude::{Collider, LockedAxes, RigidBody, Velocity};
 use leafwing_input_manager::prelude::ActionState;
 
-use crate::controls::{FrogActions, FrogAimState};
+use crate::{
+    controls::{FrogActions, FrogAimState},
+    PIXELS_PER_METER,
+};
 
 use self::physics::{CollisionState, PhysicsPlugin};
 
@@ -23,6 +27,12 @@ impl Plugin for GameplayPlugin {
     }
 }
 
+#[derive(AssetCollection, Resource)]
+pub struct FrogAssets {
+    #[asset(key = "frog.image")]
+    sprite: Handle<Image>,
+}
+
 #[derive(Bundle)]
 pub struct FrogBundle {
     rigid_body: RigidBody,
@@ -35,7 +45,7 @@ pub struct FrogBundle {
 }
 
 impl FrogBundle {
-    pub fn new(transform: Transform, texture: Handle<Image>) -> Self {
+    pub fn new(transform: Transform, frog_assets: &FrogAssets) -> Self {
         Self {
             rigid_body: RigidBody::Dynamic,
             collider: Collider::cuboid(8.0, 8.0),
@@ -44,7 +54,7 @@ impl FrogBundle {
             locked_axes: LockedAxes::ROTATION_LOCKED,
             collision_state: CollisionState::default(),
             sprite: SpriteBundle {
-                texture,
+                texture: frog_assets.sprite.clone(),
                 transform,
                 ..Default::default()
             },
